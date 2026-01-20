@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
-import { Providers } from "./components/providers";
+import { WalletProvider } from "@/components/providers/WalletProvider";
+import { ArciumProvider } from "@/components/providers/ArciumProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -15,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Solana dApp Starter",
-  description: "A minimal Next.js starter powered by @solana/react-hooks",
+  title: "Spectre Protocol",
+  description: "Zero-Knowledge Asset Management on Solana",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
@@ -31,14 +32,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <Providers>
-        <body
-          suppressHydrationWarning
-          className={`${inter.variable} ${geistMono.variable} antialiased`}
-        >
-          {children}
-        </body>
-      </Providers>
+      <body className={`${inter.variable} ${geistMono.variable} antialiased bg-black text-white`}>
+        <WalletProvider>
+          <ArciumProvider>
+            {children}
+          </ArciumProvider>
+        </WalletProvider>
+      </body>
     </html>
   );
 }
