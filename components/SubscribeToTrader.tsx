@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { Loader2, UserPlus, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function SubscribeToTrader({ traderId }: { traderId: string }) {
   const { connected } = useWallet();
@@ -29,38 +30,24 @@ export function SubscribeToTrader({ traderId }: { traderId: string }) {
   
   if (subscribed) {
       return (
-        <button
-            disabled
-            className="flex items-center gap-2 px-6 py-3 bg-green-500/10 text-green-500 rounded-lg cursor-default border border-green-500/20 font-medium"
-        >
-            <Check className="w-5 h-5" />
-            Subscribed
-        </button>
+        <Button variant="outline" className="text-primary border-primary/20 bg-primary/10 cursor-default">
+            <Check className="w-4 h-4 mr-2" />
+            Active Strategy
+        </Button>
       )
   }
   
   return (
-    <button
+    <Button
+      variant="primary"
+      size="lg"
       onClick={handleSubscribe}
-      disabled={loading || !connected}
-      className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all
-        ${loading || !connected 
-            ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
-            : 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-purple-500/25'
-        }
-      `}
+      disabled={!connected}
+      isLoading={loading}
+      glow
     >
-      {loading ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Subscribing...
-          </>
-      ) : (
-          <>
-            <UserPlus className="w-5 h-5" />
-            Subscribe to Strategy
-          </>
-      )}
-    </button>
+      {!loading && <UserPlus className="w-4 h-4 mr-2" />}
+      {loading ? "Verifying..." : "Copy Strategy"}
+    </Button>
   );
 }
