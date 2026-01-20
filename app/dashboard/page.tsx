@@ -5,7 +5,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { PublicExplorerView } from '@/components/PublicExplorerView';
 import { PrivateUserView } from '@/components/PrivateUserView';
 import { SubscribeToTrader } from '@/components/SubscribeToTrader';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { ClientWalletButton } from '@/components/ClientWalletButton';
 import { ArrowRight, Shield, Zap, Lock, Activity, Eye, Disc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -64,7 +64,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-4">
                      {/* Custom Wrapper for Wallet Button to match theme */}
                      <div className="wallet-button-wrapper">
-                        <WalletMultiButton className="!bg-[#0A0A0A] !border !border-white/10 !text-white hover:!bg-white/5 !h-10 !rounded-lg !font-medium !text-sm !px-5 transition-all !shadow-none" />
+                        <ClientWalletButton className="!bg-[#0A0A0A] !border !border-white/10 !text-white hover:!bg-white/5 !h-10 !rounded-lg !font-medium !text-sm !px-5 transition-all !shadow-none" />
                      </div>
                 </div>
             </div>
