@@ -35,7 +35,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setActiveTab('portfolio')}>
                     <div className="relative">
                         <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full group-hover:bg-primary/40 transition-all duration-500"></div>
-                        <div className="w-10 h-10 bg-[#0A0A0A] border border-white/10 rounded-xl flex items-center justify-center relative z-10">
+                        <div className="w-10 h-10 bg-card border border-white/10 rounded-xl flex items-center justify-center relative z-10">
                             <Shield className="w-5 h-5 text-primary" />
                         </div>
                     </div>
@@ -64,7 +64,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-4">
                      {/* Custom Wrapper for Wallet Button to match theme */}
                      <div className="wallet-button-wrapper">
-                        <ClientWalletButton className="!bg-[#0A0A0A] !border !border-white/10 !text-white hover:!bg-white/5 !h-10 !rounded-lg !font-medium !text-sm !px-5 transition-all !shadow-none" />
+                        <ClientWalletButton className="!bg-card !border !border-white/10 !text-white hover:!bg-white/5 !h-10 !rounded-lg !font-medium !text-sm !px-5 transition-all !shadow-none" />
                      </div>
                 </div>
             </div>

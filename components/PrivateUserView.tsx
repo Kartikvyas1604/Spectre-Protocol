@@ -53,7 +53,7 @@ export function PrivateUserView() {
     <div className="space-y-4">
         {/* Balance Card */}
         <div className="bg-gradient-to-br from-neutral-900 to-black p-1 rounded-xl border border-primary/20 shadow-[0_0_40px_-10px_rgba(34,197,94,0.1)]">
-            <div className="bg-[#0A0A0A] p-5 rounded-lg relative overflow-hidden group h-full">
+            <div className="bg-card p-5 rounded-lg relative overflow-hidden group h-full">
                  {/* Decorative Grid */}
                  <div className="absolute inset-0 bg-[linear-gradient(rgba(34,197,94,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(34,197,94,0.03)_1px,transparent_1px)] bg-[size:16px_16px]"></div>
                  

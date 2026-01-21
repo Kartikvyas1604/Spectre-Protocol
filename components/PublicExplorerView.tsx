@@ -22,8 +22,8 @@ export function PublicExplorerView({ address }: { address?: string }) {
   return (
     <div className="space-y-4 font-mono text-sm">
         {/* Mocking a Solscan-like interface */}
-        <div className="rounded-xl overflow-hidden border border-white/10 bg-[#0A0A0A]">
-            <div className="bg-[#111] px-4 py-3 border-b border-white/5 flex items-center justify-between">
+        <div className="rounded-xl overflow-hidden border border-white/10 bg-card">
+            <div className="bg-white/5 px-4 py-3 border-b border-white/5 flex items-center justify-between">
                 <span className="text-neutral-400 text-xs font-medium tracking-wide">ON-CHAIN STATE</span>
                 <span className="flex items-center gap-1.5 text-[10px] text-neutral-500 uppercase tracking-wider bg-white/5 px-2 py-1 rounded">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
@@ -75,8 +75,8 @@ export function PublicExplorerView({ address }: { address?: string }) {
             </div>
         </div>
 
-        <div className="rounded-xl overflow-hidden border border-white/10 bg-[#0A0A0A]">
-             <div className="bg-[#111] px-4 py-2 border-b border-white/5">
+        <div className="rounded-xl overflow-hidden border border-white/10 bg-card">
+             <div className="bg-white/5 px-4 py-2 border-b border-white/5">
                  <span className="text-neutral-400 text-xs font-medium tracking-wide uppercase">Confirmed Blocks</span>
              </div>
              <div className="divide-y divide-white/5">
