@@ -3,6 +3,7 @@ import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "@/components/providers/WalletProvider";
 import { ArciumProvider } from "@/components/providers/ArciumProvider";
+import { SmoothCursor } from "@/components/ui/smooth-cursor";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -33,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${geistMono.variable} antialiased bg-black text-white`}>
+        <SmoothCursor />
         <WalletProvider>
           <ArciumProvider>
             {children}
