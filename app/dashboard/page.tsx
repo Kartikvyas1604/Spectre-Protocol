@@ -4,14 +4,12 @@ import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PublicExplorerView } from '@/components/PublicExplorerView';
 import { PrivateUserView } from '@/components/PrivateUserView';
-import { SubscribeToTrader } from '@/components/SubscribeToTrader';
+import { StrategyMarketplace } from '@/components/StrategyMarketplace';
+import { PortfolioTracker } from '@/components/PortfolioTracker';
 import { ClientWalletButton } from '@/components/ClientWalletButton';
 import { ArrowRight, Shield, Zap, Lock, Activity, Eye, Disc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-
-import { StrategiesView } from '@/components/StrategiesView';
-import { GovernanceView } from '@/components/GovernanceView';
 
 export default function Dashboard() {
   const { publicKey } = useWallet();
@@ -46,12 +44,12 @@ export default function Dashboard() {
                 </div>
                 
                 <nav className="hidden md:flex items-center gap-1 p-1 bg-white/5 rounded-full border border-white/5">
-                    {['Portfolio', 'Strategies', 'Governance'].map((item) => (
+                    {['Portfolio', 'Strategies', 'Privacy Demo'].map((item) => (
                         <button 
                             key={item}
-                            onClick={() => setActiveTab(item.toLowerCase())}
+                            onClick={() => setActiveTab(item.toLowerCase().replace(' ', '-'))}
                             className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                                activeTab === item.toLowerCase() 
+                                activeTab === item.toLowerCase().replace(' ', '-')
                                 ? 'bg-white/10 text-white shadow-lg' 
                                 : 'text-neutral-400 hover:text-white hover:bg-white/5'
                             }`}
@@ -72,7 +70,11 @@ export default function Dashboard() {
 
         <main className="max-w-7xl mx-auto p-6 md:p-12 space-y-16 relative z-10">
             
-            {activeTab === 'portfolio' && (
+            {activeTab === 'portfolio' && <PortfolioTracker />}
+            
+            {activeTab === 'strategies' && <StrategyMarketplace />}
+            
+            {activeTab === 'privacy-demo' && (
                 <>
                 {/* Hero Section */}
                 <div className="text-center space-y-8 py-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -91,14 +93,6 @@ export default function Dashboard() {
                     <p className="text-neutral-400 max-w-2xl mx-auto text-lg md:text-xl font-light leading-relaxed">
                         Copy trade whales without leaking alpha. The first platform powered by <span className="text-white font-medium">Confidential Transfers</span> & <span className="text-white font-medium">Arcium MPC</span>.
                     </p>
-                    
-                    {publicKey && (
-                        <div className="flex justify-center pt-4 animate-fade-in">
-                            <div className="p-1 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-xl">
-                                <SubscribeToTrader traderId="TRADER_XYZ_123" />
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* Dual View Interface */}
@@ -194,9 +188,6 @@ export default function Dashboard() {
                 </div>
                 </>
             )}
-
-            {activeTab === 'strategies' && <StrategiesView />}
-            {activeTab === 'governance' && <GovernanceView />}
 
         </main>
     </div>
