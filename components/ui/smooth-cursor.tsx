@@ -175,12 +175,18 @@ export function SmoothCursor({
       })
     }
 
-    document.body.style.cursor = "none"
+    const styleElement = document.createElement('style')
+    styleElement.innerHTML = `
+      * {
+        cursor: none !important;
+      }
+    `
+    document.head.appendChild(styleElement)
     window.addEventListener("mousemove", throttledMouseMove)
 
     return () => {
       window.removeEventListener("mousemove", throttledMouseMove)
-      document.body.style.cursor = "auto"
+      document.head.removeChild(styleElement)
       if (rafId) cancelAnimationFrame(rafId)
     }
   }, [cursorX, cursorY, rotation, scale])
