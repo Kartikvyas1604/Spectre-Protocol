@@ -90,6 +90,7 @@ export function SmoothCursor({
   },
 }: SmoothCursorProps) {
   const [isMoving, setIsMoving] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
   const lastMousePos = useRef<Position>({ x: 0, y: 0 })
   const velocity = useRef<Position>({ x: 0, y: 0 })
   const lastUpdateTime = useRef(Date.now())
@@ -108,6 +109,10 @@ export function SmoothCursor({
     stiffness: 500,
     damping: 35,
   })
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   useEffect(() => {
     const updateVelocity = (currentPos: Position) => {
@@ -179,6 +184,8 @@ export function SmoothCursor({
       if (rafId) cancelAnimationFrame(rafId)
     }
   }, [cursorX, cursorY, rotation, scale])
+
+  if (!isMounted) return null
 
   return (
     <motion.div
