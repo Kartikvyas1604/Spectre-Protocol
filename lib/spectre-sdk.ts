@@ -5,8 +5,9 @@ import {
   Transaction,
   LAMPORTS_PER_SOL 
 } from '@solana/web3.js';
-import { AnchorProvider, Program, web3, BN } from '@coral-xyz/anchor';
+import { AnchorProvider, Program, web3, BN, Idl } from '@coral-xyz/anchor';
 import { WalletContextState } from '@solana/wallet-adapter-react';
+import vaultIdl from './vault-idl.json';
 
 // Program ID - update this after deployment
 export const PROGRAM_ID = new PublicKey('4mog8e82CLaqu6YxuSgoyZQsnLWHhTLR9aQvPHg8sXfk');
@@ -41,7 +42,7 @@ export interface UserPosition {
 export class SpectreSDK {
   private connection: Connection;
   private provider?: AnchorProvider;
-  private program?: Program;
+  private program?: Program<Idl>;
 
   constructor(connection: Connection, wallet?: WalletContextState) {
     this.connection = connection;
@@ -52,6 +53,7 @@ export class SpectreSDK {
         wallet as any,
         { commitment: 'confirmed' }
       );
+      this.program = new Program(vaultIdl as Idl, this.provider);
     }
   }
 
@@ -257,7 +259,7 @@ export class SpectreSDK {
     }
 
     try {
-      const strategy = await this.program.account.strategy.fetch(strategyKey);
+      const strategy = await (this.program.account as any).strategy.fetch(strategyKey);
       return {
         publicKey: strategyKey,
         ...strategy,
@@ -277,7 +279,7 @@ export class SpectreSDK {
     }
 
     try {
-      const strategies = await this.program.account.strategy.all();
+      const strategies = await (this.program.account as any).strategy.all();
       return strategies.map((s: any) => ({
         publicKey: s.publicKey,
         ...s.account,
@@ -310,7 +312,7 @@ export class SpectreSDK {
     const [positionPDA] = this.getPositionAddress(user, strategyKey);
 
     try {
-      const position = await this.program.account.userPosition.fetch(positionPDA);
+      const position = await (this.program.account as any).userPosition.fetch(positionPDA);
       return {
         publicKey: positionPDA,
         ...position,
@@ -330,7 +332,7 @@ export class SpectreSDK {
     }
 
     try {
-      const positions = await this.program.account.userPosition.all([
+      const positions = await (this.program.account as any).userPosition.all([
         {
           memcmp: {
             offset: 8, // Discriminator

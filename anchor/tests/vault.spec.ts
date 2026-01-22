@@ -74,9 +74,7 @@ describe("Spectre Protocol - Trading Strategy Platform", () => {
         )
         .accounts({
           trader: trader.publicKey,
-          strategy: strategyPDA,
-          systemProgram: anchor.web3.SystemProgram.programId,
-        })
+        } as any)
         .rpc();
 
       console.log("  ✓ Strategy initialized, tx:", tx);
@@ -165,10 +163,7 @@ describe("Spectre Protocol - Trading Strategy Platform", () => {
         .subscribeToStrategy(INITIAL_DEPOSIT)
         .accounts({
           user: user.publicKey,
-          strategy: strategyPDA,
-          position: positionPDA,
-          systemProgram: anchor.web3.SystemProgram.programId,
-        })
+        } as any)
         .signers([user])
         .rpc();
 
@@ -194,10 +189,7 @@ describe("Spectre Protocol - Trading Strategy Platform", () => {
         .subscribeToStrategy(deposit)
         .accounts({
           user: user2.publicKey,
-          strategy: strategyPDA,
-          position: position2PDA,
-          systemProgram: anchor.web3.SystemProgram.programId,
-        })
+        } as any)
         .signers([user2])
         .rpc();
 
@@ -215,10 +207,7 @@ describe("Spectre Protocol - Trading Strategy Platform", () => {
           .subscribeToStrategy(tinyDeposit)
           .accounts({
             user: user.publicKey,
-            strategy: strategyPDA,
-            position: positionPDA,
-            systemProgram: anchor.web3.SystemProgram.programId,
-          })
+          } as any)
           .signers([user])
           .rpc();
         
