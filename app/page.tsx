@@ -1,11 +1,17 @@
 'use client';
 
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Shield, Zap, Lock, Activity, ArrowRight } from 'lucide-react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.push('/dashboard');
+  }, [router]);
+
+  return null;
+}
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
       {/* Ambient Background */}

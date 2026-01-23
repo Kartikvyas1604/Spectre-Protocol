@@ -74,9 +74,6 @@ export default function Dashboard() {
                         </Button>
                     )}
                     <ClientWalletButton />
-                     <div className="wallet-button-wrapper">
-                        <ClientWalletButton className="!bg-card !border !border-white/10 !text-white hover:!bg-white/5 !h-10 !rounded-lg !font-medium !text-sm !px-5 transition-all !shadow-none" />
-                     </div>
                 </div>
             </div>
         </header>
