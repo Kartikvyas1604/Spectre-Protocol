@@ -1,5 +1,5 @@
 {
-  "address": "4mog8e82CLaqu6YxuSgoyZQsnLWHhTLR9aQvPHg8sXfk",
+  "address": "HbB8vSpkaaNpdcQSNX2L4Cd6uYGZuJRLy18wk5mXE2VV",
   "metadata": {
     "name": "vault",
     "version": "0.1.0",
@@ -264,10 +264,6 @@
     },
     {
       "name": "subscribe_to_strategy",
-      "docs": [
-        "Subscribe to a trading strategy",
-        "Users deposit funds and subscribe to follow a trader's strategy"
-      ],
       "discriminator": [
         93,
         118,

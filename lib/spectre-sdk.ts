@@ -9,8 +9,8 @@ import { AnchorProvider, Program, web3, BN, Idl } from '@coral-xyz/anchor';
 import { WalletContextState } from '@solana/wallet-adapter-react';
 import vaultIdl from './vault-idl.json';
 
-// Program ID - update this after deployment
-export const PROGRAM_ID = new PublicKey('4mog8e82CLaqu6YxuSgoyZQsnLWHhTLR9aQvPHg8sXfk');
+// Program ID - Deployed on Solana Devnet
+export const PROGRAM_ID = new PublicKey('HbB8vSpkaaNpdcQSNX2L4Cd6uYGZuJRLy18wk5mXE2VV');
 
 export interface Strategy {
   publicKey: PublicKey;
