@@ -87,3 +87,37 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Format number with K/M suffixes
+ */
+export function formatNumber(num: number, decimals: number = 2): string {
+  if (num >= 1_000_000) {
+    return `${(num / 1_000_000).toFixed(decimals)}M`;
+  }
+  if (num >= 1_000) {
+    return `${(num / 1_000).toFixed(decimals)}K`;
+  }
+  return num.toFixed(decimals);
+}
+
+/**
+ * Format percentage (accepts value as percentage, e.g., 10 = 10%)
+ */
+export function formatPercent(value: number, decimals: number = 1): string {
+  return `${value.toFixed(decimals)}%`;
+}
+
+/**
+ * Calculate time ago from timestamp
+ */
+export function timeAgo(timestamp: number): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  
+  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 2592000) return `${Math.floor(seconds / 86400)}d ago`;
+  if (seconds < 31536000) return `${Math.floor(seconds / 2592000)}mo ago`;
+  return `${Math.floor(seconds / 31536000)}y ago`;
+}
