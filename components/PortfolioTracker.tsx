@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { PublicKey } from '@solana/web3.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -35,7 +36,8 @@ export function PortfolioTracker() {
     setSettling(strategyKey);
     try {
       const sdk = new SpectreSDK(connection, wallet);
-      await sdk.settleFees(strategyKey);
+      const strategyPubkey = new PublicKey(strategyKey);
+      await sdk.settleFees(wallet.publicKey, strategyPubkey);
       alert('Fees settled successfully!');
       refresh();
     } catch (error) {
@@ -59,7 +61,8 @@ export function PortfolioTracker() {
     setUnsubscribing(strategyKey);
     try {
       const sdk = new SpectreSDK(connection, wallet);
-      await sdk.unsubscribeFromStrategy(strategyKey);
+      const strategyPubkey = new PublicKey(strategyKey);
+      await sdk.unsubscribe(wallet.publicKey, strategyPubkey);
       alert('Successfully unsubscribed and withdrawn funds!');
       refresh();
     } catch (error) {

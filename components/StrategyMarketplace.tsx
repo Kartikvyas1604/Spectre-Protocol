@@ -38,9 +38,13 @@ export function StrategyMarketplace() {
     setSubscribing(strategyId);
     try {
       const sdk = new SpectreSDK(connection, wallet);
-      const amountLamports = Math.floor(amount * 1_000_000_000);
+      const strategyPubkey = new PublicKey(strategyId);
       
-      await sdk.subscribeToStrategy(strategyId, amountLamports);
+      await sdk.subscribeToStrategy(
+        wallet.publicKey,
+        strategyPubkey,
+        amount
+      );
       alert('Successfully subscribed to strategy!');
       refreshStrategies();
     } catch (error) {
