@@ -93,7 +93,16 @@ export default function TraderDashboard() {
       console.error('Strategy creation failed:', error);
       let errorMsg = 'Failed to create strategy. ';
       
-      if (error.message?.includes('no record of a prior credit')) {
+      // Check if user rejected the transaction
+      if (error.message?.includes('User rejected') || error.name === 'WalletSignTransactionError') {
+        alert('Transaction cancelled.');
+        setLoading(false);
+        return;
+      }
+      
+      if (error.message?.includes('program that does not exist')) {
+        errorMsg += 'Program not deployed on this network. Please ensure you are on Solana Devnet and the program is deployed.\n\nProgram ID: 4mog8e82CLaqu6YxuSgoyZQsnLWHhTLR9aQvPHg8sXfk';
+      } else if (error.message?.includes('no record of a prior credit')) {
         errorMsg += 'Your wallet has insufficient SOL. Get devnet SOL from:\nhttps://faucet.solana.com/\n\nOr run:\nsolana airdrop 2 ' + wallet.publicKey.toBase58() + ' --url devnet';
       } else if (error.message?.includes('already in use')) {
         errorMsg += 'You already have a strategy created.';

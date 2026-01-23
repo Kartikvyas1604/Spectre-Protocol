@@ -23,7 +23,7 @@ import { SpectreSDK } from '@/lib/spectre-sdk';
 export function PortfolioTracker() {
   const { connection } = useConnection();
   const wallet = useWallet();
-  const { positions, loading, error, refresh } = useUserPositions();
+  const { positions, loading, error, refreshPositions } = useUserPositions();
   const [settling, setSettling] = useState<string | null>(null);
   const [unsubscribing, setUnsubscribing] = useState<string | null>(null);
 
@@ -39,7 +39,7 @@ export function PortfolioTracker() {
       const strategyPubkey = new PublicKey(strategyKey);
       await sdk.settleFees(wallet.publicKey, strategyPubkey);
       alert('Fees settled successfully!');
-      refresh();
+      refreshPositions();
     } catch (error) {
       console.error('Fee settlement failed:', error);
       alert('Failed to settle fees. Please try again.');
@@ -64,7 +64,7 @@ export function PortfolioTracker() {
       const strategyPubkey = new PublicKey(strategyKey);
       await sdk.unsubscribe(wallet.publicKey, strategyPubkey);
       alert('Successfully unsubscribed and withdrawn funds!');
-      refresh();
+      refreshPositions();
     } catch (error) {
       console.error('Unsubscribe failed:', error);
       alert('Failed to unsubscribe. Please try again.');
