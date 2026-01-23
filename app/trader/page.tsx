@@ -78,7 +78,7 @@ export default function TraderDashboard() {
     setLoading(true);
     try {
       const sdk = new SpectreSDK(connection, wallet);
-      await sdk.createStrategy(name, description, feeBps);
+      await sdk.initializeStrategy(wallet.publicKey, name, description, feeBps);
       alert('Strategy created successfully!');
       await loadTraderStrategy();
     } catch (error) {
@@ -113,11 +113,18 @@ export default function TraderDashboard() {
       const sdk = new SpectreSDK(connection, wallet);
       const amountLamports = Math.floor(amountNum * 1_000_000_000); // Convert SOL to lamports
       
+      // For demo purposes, simulate profit/loss
+      const profitOrLoss = direction === 'long' 
+        ? Math.floor(amountLamports * 0.05) // 5% profit for long
+        : Math.floor(amountLamports * -0.03); // 3% loss for short
+      
+      // Note: In production, you'd get the actual position key for each subscriber
+      // For now, we'll execute against the strategy itself
       await sdk.executeTrade(
-        myStrategy.publicKey.toBase58(),
-        asset,
+        wallet.publicKey,
+        myStrategy.publicKey,
         amountLamports,
-        direction === 'long'
+        profitOrLoss
       );
 
       // Add to local history

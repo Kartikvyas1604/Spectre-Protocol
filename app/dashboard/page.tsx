@@ -74,20 +74,6 @@ export default function Dashboard() {
                         </Button>
                     )}
                     <ClientWalletButton />
-                            onClick={() => setActiveTab(item.toLowerCase().replace(' ', '-'))}
-                            className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                                activeTab === item.toLowerCase().replace(' ', '-')
-                                ? 'bg-white/10 text-white shadow-lg' 
-                                : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                            }`}
-                        >
-                            {item}
-                        </button>
-                    ))}
-                </nav>
-
-                <div className="flex items-center gap-4">
-                     {/* Custom Wrapper for Wallet Button to match theme */}
                      <div className="wallet-button-wrapper">
                         <ClientWalletButton className="!bg-card !border !border-white/10 !text-white hover:!bg-white/5 !h-10 !rounded-lg !font-medium !text-sm !px-5 transition-all !shadow-none" />
                      </div>

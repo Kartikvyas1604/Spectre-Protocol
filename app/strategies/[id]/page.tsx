@@ -48,7 +48,7 @@ export default function StrategyDetailPage() {
         
         // Check if user is already subscribed
         if (wallet.publicKey) {
-          const positions = await sdk.getUserPositions(wallet.publicKey.toBase58());
+          const positions = await sdk.getUserPositions(wallet.publicKey);
           const subscribed = positions.some(
             p => p.strategy.equals(found.publicKey) && p.isActive
           );
@@ -80,11 +80,11 @@ export default function StrategyDetailPage() {
     setSubscribing(true);
     try {
       const sdk = new SpectreSDK(connection, wallet);
-      const amountLamports = Math.floor(amount * 1_000_000_000);
       
       await sdk.subscribeToStrategy(
-        strategy.publicKey.toBase58(),
-        amountLamports
+        wallet.publicKey,
+        strategy.publicKey,
+        amount
       );
 
       alert('Successfully subscribed to strategy!');
