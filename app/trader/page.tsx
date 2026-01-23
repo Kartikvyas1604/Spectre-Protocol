@@ -77,13 +77,31 @@ export default function TraderDashboard() {
 
     setLoading(true);
     try {
+      // Check wallet balance first
+      const balance = await connection.getBalance(wallet.publicKey);
+      if (balance < 1000000) { // Less than 0.001 SOL
+        alert('Insufficient SOL balance. Please get devnet SOL from:\nhttps://faucet.solana.com/\n\nOr run: solana airdrop 2 ' + wallet.publicKey.toBase58() + ' --url devnet');
+        setLoading(false);
+        return;
+      }
+
       const sdk = new SpectreSDK(connection, wallet);
-      await sdk.initializeStrategy(wallet.publicKey, name, description, feeBps);
-      alert('Strategy created successfully!');
+      const tx = await sdk.initializeStrategy(wallet.publicKey, name, description, feeBps);
+      alert('Strategy created successfully!\n\nTransaction: ' + tx);
       await loadTraderStrategy();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Strategy creation failed:', error);
-      alert('Failed to create strategy. Please try again.');
+      let errorMsg = 'Failed to create strategy. ';
+      
+      if (error.message?.includes('no record of a prior credit')) {
+        errorMsg += 'Your wallet has insufficient SOL. Get devnet SOL from:\nhttps://faucet.solana.com/\n\nOr run:\nsolana airdrop 2 ' + wallet.publicKey.toBase58() + ' --url devnet';
+      } else if (error.message?.includes('already in use')) {
+        errorMsg += 'You already have a strategy created.';
+      } else {
+        errorMsg += error.message || 'Please try again.';
+      }
+      
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
