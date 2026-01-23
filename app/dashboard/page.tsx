@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PublicExplorerView } from '@/components/PublicExplorerView';
 import { PrivateUserView } from '@/components/PrivateUserView';
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function Dashboard() {
+  const router = useRouter();
   const { publicKey } = useWallet();
   const [activeTab, setActiveTab] = useState('portfolio');
   
@@ -47,6 +49,31 @@ export default function Dashboard() {
                     {['Portfolio', 'Strategies', 'Privacy Demo'].map((item) => (
                         <button 
                             key={item}
+                            onClick={() => setActiveTab(item.toLowerCase().replace(' ', '-'))}
+                            className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                                activeTab === item.toLowerCase().replace(' ', '-')
+                                    ? 'bg-primary text-black shadow-lg'
+                                    : 'text-neutral-400 hover:text-white'
+                            }`}
+                        >
+                            {item}
+                        </button>
+                    ))}
+                </nav>
+
+                <div className="flex items-center gap-3">
+                    {publicKey && (
+                        <Button
+                            onClick={() => router.push('/trader')}
+                            variant="outline"
+                            size="sm"
+                            className="border-primary/20 text-primary hover:bg-primary/10"
+                        >
+                            <Activity className="w-4 h-4 mr-2" />
+                            Trader Dashboard
+                        </Button>
+                    )}
+                    <ClientWalletButton />
                             onClick={() => setActiveTab(item.toLowerCase().replace(' ', '-'))}
                             className={`px-5 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${
                                 activeTab === item.toLowerCase().replace(' ', '-')

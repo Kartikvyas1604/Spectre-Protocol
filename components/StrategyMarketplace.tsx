@@ -1,15 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useRouter } from 'next/navigation';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/button';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Users, DollarSign, Activity, Star, Clock, AlertCircle } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Activity, Star, Clock, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { useStrategies } from '@/lib/hooks/useStrategies';
+import { SpectreSDK } from '@/lib/spectre-sdk';
 import { formatNumber, formatPercent, timeAgo } from '@/lib/helpers';
 
 export function StrategyMarketplace() {
+  const router = useRouter();
+  const { connection } = useConnection();
   const wallet = useWallet();
   const { strategies, loading, error, refreshStrategies } = useStrategies();
   const [subscribing, setSubscribing] = useState<string | null>(null);
@@ -22,17 +26,33 @@ export function StrategyMarketplace() {
       return;
     }
 
+    const amountInput = prompt('Enter amount to subscribe (SOL):', '1.0');
+    if (!amountInput) return;
+
+    const amount = parseFloat(amountInput);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Invalid amount');
+      return;
+    }
+
     setSubscribing(strategyId);
     try {
-      // Subscribe logic will be implemented
-      console.log('Subscribing to strategy:', strategyId);
-      alert('Subscription feature coming soon!');
+      const sdk = new SpectreSDK(connection, wallet);
+      const amountLamports = Math.floor(amount * 1_000_000_000);
+      
+      await sdk.subscribeToStrategy(strategyId, amountLamports);
+      alert('Successfully subscribed to strategy!');
+      refreshStrategies();
     } catch (error) {
       console.error('Subscription failed:', error);
       alert('Subscription failed. Please try again.');
     } finally {
       setSubscribing(null);
     }
+  };
+
+  const handleViewDetails = (strategyId: string) => {
+    router.push(`/strategies/${strategyId}`);
   };
 
   // Filter and sort strategies
@@ -189,17 +209,29 @@ export function StrategyMarketplace() {
 
               {/* Footer */}
               <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                <div className="flex items-center gap-1 text-xs text-neutral-500">
-                  <Clock className="w-3 h-3" />
-                  <span>Created {timeAgo(strategy.createdAt * 1000)}</span>
-                </div>
+                <Button
+                  onClick={() => handleViewDetails(strategy.publicKey)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-neutral-400 hover:text-white"
+                >
+                  View Details
+                  <ArrowRight className="w-3 h-3 ml-1" />
+                </Button>
                 <Button
                   onClick={() => handleSubscribe(strategy.publicKey)}
                   disabled={subscribing === strategy.publicKey || !wallet.connected}
                   size="sm"
                   className="bg-primary text-black hover:bg-primary/90"
                 >
-                  {subscribing === strategy.publicKey ? 'Subscribing...' : 'Subscribe'}
+                  {subscribing === strategy.publicKey ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Subscribing...
+                    </>
+                  ) : (
+                    'Subscribe'
+                  )}
                 </Button>
               </div>
             </CardContent>

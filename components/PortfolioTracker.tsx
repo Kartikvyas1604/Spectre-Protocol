@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { useState } from 'react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -12,75 +12,32 @@ import {
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
-
-interface Position {
-  strategyName: string;
-  strategyKey: string;
-  initialBalance: number;
-  currentBalance: number;
-  totalFeesPaid: number;
-  subscribedAt: number;
-  lastFeeSettlement: number;
-  isActive: boolean;
-}
+import { useUserPositions } from '@/lib/hooks/useUserPositions';
+import { formatSOL, formatPercentage, formatCurrency, shortenAddress } from '@/lib/helpers';
+import { SpectreSDK } from '@/lib/spectre-sdk';
 
 export function PortfolioTracker() {
   const { connection } = useConnection();
   const wallet = useWallet();
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { positions, loading, error, refresh } = useUserPositions();
   const [settling, setSettling] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (wallet.publicKey) {
-      loadPositions();
-    }
-  }, [wallet.publicKey]);
-
-  const loadPositions = async () => {
-    try {
-      setLoading(true);
-      // Mock data for demonstration
-      const mockPositions: Position[] = [
-        {
-          strategyName: 'Momentum Whale Strategy',
-          strategyKey: 'Strategy1...',
-          initialBalance: 10_000_000_000, // 10 SOL
-          currentBalance: 12_500_000_000, // 12.5 SOL
-          totalFeesPaid: 500_000_000, // 0.5 SOL
-          subscribedAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
-          lastFeeSettlement: Date.now() - 7 * 24 * 60 * 60 * 1000,
-          isActive: true,
-        },
-        {
-          strategyName: 'DeFi Yield Optimizer',
-          strategyKey: 'Strategy2...',
-          initialBalance: 5_000_000_000, // 5 SOL
-          currentBalance: 5_800_000_000, // 5.8 SOL
-          totalFeesPaid: 160_000_000, // 0.16 SOL
-          subscribedAt: Date.now() - 20 * 24 * 60 * 60 * 1000,
-          lastFeeSettlement: Date.now() - 3 * 24 * 60 * 60 * 1000,
-          isActive: true,
-        },
-      ];
-      
-      setPositions(mockPositions);
-    } catch (error) {
-      console.error('Failed to load positions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [unsubscribing, setUnsubscribing] = useState<string | null>(null);
 
   const handleSettleFees = async (strategyKey: string) => {
+    if (!wallet.publicKey || !wallet.signTransaction) {
+      alert('Please connect your wallet');
+      return;
+    }
+
     setSettling(strategyKey);
     try {
-      // In production, call smart contract
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const sdk = new SpectreSDK(connection, wallet);
+      await sdk.settleFees(strategyKey);
       alert('Fees settled successfully!');
-      loadPositions();
+      refresh();
     } catch (error) {
       console.error('Fee settlement failed:', error);
       alert('Failed to settle fees. Please try again.');
@@ -90,73 +47,78 @@ export function PortfolioTracker() {
   };
 
   const handleUnsubscribe = async (strategyKey: string) => {
+    if (!wallet.publicKey || !wallet.signTransaction) {
+      alert('Please connect your wallet');
+      return;
+    }
+
     if (!confirm('Are you sure you want to unsubscribe? This will withdraw all your funds.')) {
       return;
     }
 
+    setUnsubscribing(strategyKey);
     try {
-      // In production, call smart contract
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const sdk = new SpectreSDK(connection, wallet);
+      await sdk.unsubscribeFromStrategy(strategyKey);
       alert('Successfully unsubscribed and withdrawn funds!');
-      loadPositions();
+      refresh();
     } catch (error) {
       console.error('Unsubscribe failed:', error);
       alert('Failed to unsubscribe. Please try again.');
+    } finally {
+      setUnsubscribing(null);
     }
   };
 
-  const calculatePnL = (position: Position) => {
-    const pnl = position.currentBalance - position.initialBalance;
-    const pnlPercentage = (pnl / position.initialBalance) * 100;
-    return { pnl, pnlPercentage };
-  };
-
-  const formatSOL = (lamports: number): string => {
-    return (lamports / 1_000_000_000).toFixed(2);
-  };
-
-  const formatDate = (timestamp: number): string => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-  };
-
-  const getDaysAgo = (timestamp: number): number => {
-    return Math.floor((Date.now() - timestamp) / (24 * 60 * 60 * 1000));
-  };
-
-  const totalValue = positions.reduce((sum, p) => sum + p.currentBalance, 0);
-  const totalInvested = positions.reduce((sum, p) => sum + p.initialBalance, 0);
-  const totalPnL = totalValue - totalInvested;
-  const totalPnLPercentage = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
-  const totalFees = positions.reduce((sum, p) => sum + p.totalFeesPaid, 0);
-
-  if (!wallet.connected) {
+  if (!wallet.publicKey) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <DollarSign className="w-16 h-16 text-neutral-700 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-neutral-400 mb-2">
-            Connect Your Wallet
-          </h3>
-          <p className="text-neutral-500">
-            Connect your wallet to view your portfolio
-          </p>
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-card border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <DollarSign className="w-8 h-8 text-primary" />
         </div>
+        <p className="text-neutral-400 mb-4">Connect your wallet to view your portfolio</p>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="text-center py-12">
+        <Loader2 className="w-12 h-12 text-primary mx-auto animate-spin" />
+        <p className="mt-4 text-neutral-400">Loading your portfolio...</p>
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-400 mb-4">{error}</p>
+        <Button onClick={refresh} variant="outline">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  if (positions.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-card border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <DollarSign className="w-8 h-8 text-neutral-600" />
+        </div>
+        <h3 className="text-xl font-semibold mb-2">No Active Positions</h3>
+        <p className="text-neutral-400">Subscribe to strategies to start trading</p>
+      </div>
+    );
+  }
+
+  // Calculate portfolio metrics
+  const totalInitial = positions.reduce((sum, p) => sum + p.initialBalance, 0);
+  const totalCurrent = positions.reduce((sum, p) => sum + p.currentBalance, 0);
+  const totalFees = positions.reduce((sum, p) => sum + p.totalFeesPaid, 0);
+  const totalPnL = totalCurrent - totalInitial;
+  const totalPnLPercent = totalInitial > 0 ? (totalPnL / totalInitial) * 100 : 0;
 
   return (
     <div className="space-y-8">
@@ -176,7 +138,7 @@ export function PortfolioTracker() {
               <span>Total Value</span>
             </div>
             <p className="text-3xl font-bold text-white">
-              {formatSOL(totalValue)} SOL
+              {formatSOL(totalCurrent)} SOL
             </p>
           </CardContent>
         </Card>
@@ -185,17 +147,17 @@ export function PortfolioTracker() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-neutral-400 text-sm mb-2">
               {totalPnL >= 0 ? (
-                <TrendingUp className="w-4 h-4" />
+                <TrendingUp className="w-4 h-4 text-green-500" />
               ) : (
-                <TrendingDown className="w-4 h-4" />
+                <TrendingDown className="w-4 h-4 text-red-500" />
               )}
               <span>Total P&L</span>
             </div>
-            <p className={`text-3xl font-bold ${totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <p className={`text-3xl font-bold ${totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {totalPnL >= 0 ? '+' : ''}{formatSOL(totalPnL)} SOL
             </p>
-            <p className={`text-sm mt-1 ${totalPnL >= 0 ? 'text-green-400/70' : 'text-red-400/70'}`}>
-              {totalPnL >= 0 ? '+' : ''}{totalPnLPercentage.toFixed(2)}%
+            <p className="text-sm text-neutral-500 mt-1">
+              {formatPercentage(totalPnLPercent)}
             </p>
           </CardContent>
         </Card>
@@ -204,9 +166,9 @@ export function PortfolioTracker() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-neutral-400 text-sm mb-2">
               <Percent className="w-4 h-4" />
-              <span>Fees Paid</span>
+              <span>Total Fees Paid</span>
             </div>
-            <p className="text-3xl font-bold text-primary">
+            <p className="text-3xl font-bold text-white">
               {formatSOL(totalFees)} SOL
             </p>
           </CardContent>
@@ -227,116 +189,114 @@ export function PortfolioTracker() {
 
       {/* Active Positions */}
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-white">Active Positions</h3>
-        
+        <h3 className="text-xl font-bold text-white">Active Positions</h3>
         {positions.map((position) => {
-          const { pnl, pnlPercentage } = calculatePnL(position);
-          const isProfitable = pnl >= 0;
+          const profit = position.currentBalance - position.initialBalance;
+          const profitPercent = (profit / position.initialBalance) * 100;
+          const daysSinceSubscribed = Math.floor(
+            (Date.now() - position.subscribedAt) / (1000 * 60 * 60 * 24)
+          );
+          const daysSinceSettlement = Math.floor(
+            (Date.now() - position.lastFeeSettlement) / (1000 * 60 * 60 * 24)
+          );
 
           return (
-            <Card
-              key={position.strategyKey}
-              className="bg-card/50 border-white/10 hover:border-primary/30 transition-all duration-300"
-            >
-              <CardHeader>
+            <Card key={position.strategyKey} className="bg-card/50 border-white/10 overflow-hidden">
+              <CardHeader className="border-b border-white/5">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg text-white">
-                      {position.strategyName}
-                    </CardTitle>
-                    <p className="text-sm text-neutral-400 mt-1">
-                      Subscribed {getDaysAgo(position.subscribedAt)} days ago
+                  <div>
+                    <CardTitle className="text-white">{position.strategyName}</CardTitle>
+                    <p className="text-sm text-neutral-500 mt-1">
+                      {shortenAddress(position.strategyKey)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {isProfitable ? (
-                      <ArrowUpRight className="w-5 h-5 text-green-400" />
+                  <div className={`flex items-center gap-1 px-3 py-1 rounded-full border ${
+                    profit >= 0 
+                      ? 'bg-green-500/10 border-green-500/20 text-green-500'
+                      : 'bg-red-500/10 border-red-500/20 text-red-500'
+                  }`}>
+                    {profit >= 0 ? (
+                      <ArrowUpRight className="w-4 h-4" />
                     ) : (
-                      <ArrowDownRight className="w-5 h-5 text-red-400" />
+                      <ArrowDownRight className="w-4 h-4" />
                     )}
-                    <span className={`text-xl font-bold ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
-                      {isProfitable ? '+' : ''}{pnlPercentage.toFixed(2)}%
-                    </span>
+                    <span className="font-bold">{formatPercentage(profitPercent)}</span>
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div>
-                    <p className="text-xs text-neutral-400 mb-1">Initial</p>
-                    <p className="text-lg font-semibold text-white">
-                      {formatSOL(position.initialBalance)} SOL
+                    <p className="text-neutral-500 text-sm mb-1">Initial Balance</p>
+                    <p className="text-white font-semibold">{formatSOL(position.initialBalance)} SOL</p>
+                  </div>
+                  <div>
+                    <p className="text-neutral-500 text-sm mb-1">Current Balance</p>
+                    <p className="text-white font-semibold">{formatSOL(position.currentBalance)} SOL</p>
+                  </div>
+                  <div>
+                    <p className="text-neutral-500 text-sm mb-1">P&L</p>
+                    <p className={`font-semibold ${profit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {profit >= 0 ? '+' : ''}{formatSOL(profit)} SOL
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-400 mb-1">Current</p>
-                    <p className="text-lg font-semibold text-white">
-                      {formatSOL(position.currentBalance)} SOL
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-neutral-400 mb-1">P&L</p>
-                    <p className={`text-lg font-semibold ${isProfitable ? 'text-green-400' : 'text-red-400'}`}>
-                      {isProfitable ? '+' : ''}{formatSOL(pnl)} SOL
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-neutral-400 mb-1">Fees Paid</p>
-                    <p className="text-lg font-semibold text-primary">
-                      {formatSOL(position.totalFeesPaid)} SOL
-                    </p>
+                    <p className="text-neutral-500 text-sm mb-1">Fees Paid</p>
+                    <p className="text-white font-semibold">{formatSOL(position.totalFeesPaid)} SOL</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-neutral-500">
-                  <Clock className="w-4 h-4" />
-                  <span>Last fee settlement: {getDaysAgo(position.lastFeeSettlement)} days ago</span>
-                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                  <div className="flex items-center gap-4 text-sm text-neutral-500">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>Subscribed {daysSinceSubscribed}d ago</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      <span>Last settlement {daysSinceSettlement}d ago</span>
+                    </div>
+                  </div>
 
-                <div className="flex gap-3">
-                  <Button
-                    onClick={() => handleSettleFees(position.strategyKey)}
-                    disabled={settling === position.strategyKey || !isProfitable}
-                    variant="outline"
-                    className="flex-1 border-white/10"
-                  >
-                    {settling === position.strategyKey ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Settling...
-                      </>
-                    ) : (
-                      'Settle Fees'
-                    )}
-                  </Button>
-                  <Button
-                    onClick={() => handleUnsubscribe(position.strategyKey)}
-                    variant="outline"
-                    className="flex-1 border-white/10 hover:border-red-500/30 hover:text-red-400"
-                  >
-                    Unsubscribe & Withdraw
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleSettleFees(position.strategyKey)}
+                      disabled={settling === position.strategyKey}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {settling === position.strategyKey ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Settling...
+                        </>
+                      ) : (
+                        'Settle Fees'
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => handleUnsubscribe(position.strategyKey)}
+                      disabled={unsubscribing === position.strategyKey}
+                      variant="outline"
+                      size="sm"
+                      className="text-red-400 border-red-400/20 hover:bg-red-400/10"
+                    >
+                      {unsubscribing === position.strategyKey ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Unsubscribing...
+                        </>
+                      ) : (
+                        'Unsubscribe'
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           );
         })}
-
-        {positions.length === 0 && (
-          <div className="text-center py-20 border border-dashed border-white/10 rounded-lg">
-            <Calendar className="w-16 h-16 text-neutral-700 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-neutral-400 mb-2">
-              No Active Positions
-            </h3>
-            <p className="text-neutral-500 mb-6">
-              Subscribe to a strategy to start trading
-            </p>
-            <Button onClick={() => window.location.hash = '#strategies'}>
-              Browse Strategies
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
