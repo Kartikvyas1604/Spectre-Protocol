@@ -24,6 +24,7 @@ export default function TraderDashboard() {
   const { connection } = useConnection();
   const wallet = useWallet();
   const [myStrategy, setMyStrategy] = useState<any>(null);
+  const [strategyPositions, setStrategyPositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState(false);
   
@@ -50,6 +51,12 @@ export default function TraderDashboard() {
       // Find strategy owned by current wallet
       const owned = strategies.find(s => s.trader.equals(wallet.publicKey!));
       setMyStrategy(owned);
+
+      // Load positions for the strategy
+      if (owned) {
+        const positions = await sdk.getActiveStrategyPositions(owned.publicKey);
+        setStrategyPositions(positions);
+      }
     } catch (error) {
       console.error('Failed to load strategy:', error);
     } finally {
@@ -129,6 +136,11 @@ export default function TraderDashboard() {
       return;
     }
 
+    if (strategyPositions.length === 0) {
+      alert('No active subscribers to execute trades for');
+      return;
+    }
+
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
       alert('Invalid amount');
@@ -145,14 +157,24 @@ export default function TraderDashboard() {
         ? Math.floor(amountLamports * 0.05) // 5% profit for long
         : Math.floor(amountLamports * -0.03); // 3% loss for short
       
-      // Note: In production, you'd get the actual position key for each subscriber
-      // For now, we'll execute against the strategy itself
-      await sdk.executeTrade(
-        wallet.publicKey,
-        myStrategy.publicKey,
-        amountLamports,
-        profitOrLoss
-      );
+      // Execute trade for each active position (subscriber)
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const position of strategyPositions) {
+        try {
+          await sdk.executeTrade(
+            wallet.publicKey,
+            position.publicKey, // Pass the position PDA, not the strategy
+            amountLamports,
+            profitOrLoss
+          );
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to execute trade for position ${position.publicKey.toBase58()}:`, error);
+          failCount++;
+        }
+      }
 
       // Add to local history
       setTradeHistory([
@@ -161,12 +183,18 @@ export default function TraderDashboard() {
           amount: amountNum,
           direction,
           timestamp: Date.now(),
-          status: 'executed'
+          status: 'executed',
+          positionsUpdated: successCount
         },
         ...tradeHistory
       ]);
 
-      alert('Trade executed successfully!');
+      if (failCount > 0) {
+        alert(`Trade executed for ${successCount} positions. ${failCount} failed.`);
+      } else {
+        alert(`Trade executed successfully for ${successCount} position(s)!`);
+      }
+      
       setAmount('');
       await loadTraderStrategy();
     } catch (error) {
@@ -272,6 +300,40 @@ export default function TraderDashboard() {
               </CardContent>
             </Card>
 
+            {/* Active Subscribers Section */}
+            {strategyPositions.length > 0 && (
+              <Card className="bg-card/50 border-white/10">
+                <CardHeader className="border-b border-white/5">
+                  <CardTitle className="text-white">Active Subscribers ({strategyPositions.length})</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="space-y-3">
+                    {strategyPositions.map((position, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-4 bg-black/50 border border-white/5 rounded-lg hover:border-white/10 transition-colors"
+                      >
+                        <div>
+                          <p className="text-white font-medium">
+                            {shortenAddress(position.user.toBase58())}
+                          </p>
+                          <p className="text-sm text-neutral-500">
+                            Balance: {formatSOL(position.currentBalance.toNumber())} SOL
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-white">
+                            {formatSOL(position.initialBalance.toNumber())} SOL
+                          </p>
+                          <p className="text-xs text-neutral-500">Initial</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Execute Trade */}
               <Card className="bg-card/50 border-white/10">
@@ -344,18 +406,23 @@ export default function TraderDashboard() {
 
                     <Button
                       type="submit"
-                      disabled={executing || !amount}
-                      className="w-full bg-primary text-black hover:bg-primary/90"
+                      disabled={executing || !amount || strategyPositions.length === 0}
+                      className="w-full bg-primary text-black hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {executing ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Executing...
                         </>
+                      ) : strategyPositions.length === 0 ? (
+                        <>
+                          <Zap className="w-4 h-4 mr-2" />
+                          No Subscribers Yet
+                        </>
                       ) : (
                         <>
                           <Zap className="w-4 h-4 mr-2" />
-                          Execute Trade
+                          Execute Trade for {strategyPositions.length} Subscriber{strategyPositions.length > 1 ? 's' : ''}
                         </>
                       )}
                     </Button>

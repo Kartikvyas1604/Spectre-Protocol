@@ -360,6 +360,42 @@ export class SpectreSDK {
   }
 
   /**
+   * Fetch all positions for a strategy
+   */
+  async getStrategyPositions(strategyKey: PublicKey): Promise<UserPosition[]> {
+    if (!this.program) {
+      throw new Error('Program not initialized');
+    }
+
+    try {
+      const positions = await (this.program.account as any).userPosition.all([
+        {
+          memcmp: {
+            offset: 8 + 32, // Discriminator + user pubkey
+            bytes: strategyKey.toBase58(),
+          },
+        },
+      ]);
+
+      return positions.map((p: any) => ({
+        publicKey: p.publicKey,
+        ...p.account,
+      })) as UserPosition[];
+    } catch (error) {
+      console.error('Failed to fetch strategy positions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch all active positions for a strategy
+   */
+  async getActiveStrategyPositions(strategyKey: PublicKey): Promise<UserPosition[]> {
+    const allPositions = await this.getStrategyPositions(strategyKey);
+    return allPositions.filter((p) => p.isActive);
+  }
+
+  /**
    * Calculate position P&L
    */
   calculatePnL(position: UserPosition): {
