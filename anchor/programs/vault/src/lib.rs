@@ -233,29 +233,14 @@ pub mod vault {
 
         require!(fee_amount > 0, VaultError::FeeAmountTooSmall);
 
-        // Prepare seeds for transfer
+        // Transfer fee from position to trader manually (can't use system program transfer on account with data)
+        **ctx.accounts.position.to_account_info().try_borrow_mut_lamports()? -= fee_amount;
+        **ctx.accounts.trader.to_account_info().try_borrow_mut_lamports()? += fee_amount;
+
+        // Store values before mutable borrow
         let user_key = ctx.accounts.position.user;
         let strategy_key = ctx.accounts.position.strategy;
-        let bump = ctx.accounts.position.bump;
-        let position_seeds = &[
-            b"position",
-            user_key.as_ref(),
-            strategy_key.as_ref(),
-            &[bump],
-        ];
-
-        // Transfer fee from position to trader
-        transfer(
-            CpiContext::new_with_signer(
-                ctx.accounts.system_program.to_account_info(),
-                Transfer {
-                    from: ctx.accounts.position.to_account_info(),
-                    to: ctx.accounts.trader.to_account_info(),
-                },
-                &[position_seeds],
-            ),
-            fee_amount,
-        )?;
+        let trader_key = ctx.accounts.strategy.trader;
 
         // Update position
         let position = &mut ctx.accounts.position;
@@ -277,7 +262,7 @@ pub mod vault {
         emit!(FeesSettled {
             user: user_key,
             strategy: strategy_key,
-            trader: strategy.trader,
+            trader: trader_key,
             fee_amount,
             remaining_balance: position.current_balance,
             timestamp: Clock::get()?.unix_timestamp,
@@ -291,23 +276,20 @@ pub mod vault {
         require!(ctx.accounts.position.is_active, VaultError::PositionInactive);
 
         let withdraw_amount = ctx.accounts.position.current_balance;
+        let position_lamports = ctx.accounts.position.to_account_info().lamports();
         
-        // Prepare seeds for transfer
-        let user_key = ctx.accounts.position.user;
-        let strategy_key = ctx.accounts.position.strategy;
-        let bump = ctx.accounts.position.bump;
-        let position_seeds = &[
-            b"position",
-            user_key.as_ref(),
-            strategy_key.as_ref(),
-            &[bump],
-        ];
-
-        // Transfer user's balance back (not including rent-exempt amount)
-        if withdraw_amount > 0 {
+        // Only withdraw if there are sufficient lamports in the account
+        // The position account needs to maintain rent-exempt balance until it's closed
+        if withdraw_amount > 0 && position_lamports > withdraw_amount {
+            // Transfer user's balance back
             **ctx.accounts.position.to_account_info().try_borrow_mut_lamports()? -= withdraw_amount;
             **ctx.accounts.user.to_account_info().try_borrow_mut_lamports()? += withdraw_amount;
         }
+        
+        // Prepare seeds for transfer (not used anymore but keeping structure)
+        let user_key = ctx.accounts.position.user;
+        let strategy_key = ctx.accounts.position.strategy;
+        let bump = ctx.accounts.position.bump;
 
         // Update strategy subscriber count before closing
         let strategy = &mut ctx.accounts.strategy;
