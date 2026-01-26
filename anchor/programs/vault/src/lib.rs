@@ -233,6 +233,13 @@ pub mod vault {
 
         require!(fee_amount > 0, VaultError::FeeAmountTooSmall);
 
+        // Check if position has enough lamports for the fee
+        let position_lamports = ctx.accounts.position.to_account_info().lamports();
+        require!(
+            position_lamports > fee_amount,
+            VaultError::InsufficientBalance
+        );
+
         // Transfer fee from position to trader manually (can't use system program transfer on account with data)
         **ctx.accounts.position.to_account_info().try_borrow_mut_lamports()? -= fee_amount;
         **ctx.accounts.trader.to_account_info().try_borrow_mut_lamports()? += fee_amount;
