@@ -323,7 +323,11 @@ export class SpectreSDK {
         publicKey: positionPDA,
         ...position,
       } as UserPosition;
-    } catch (error) {
+    } catch (error: any) {
+      // Account doesn't exist yet - this is normal for new subscriptions
+      if (error.message?.includes('Account does not exist')) {
+        return null;
+      }
       console.error('Failed to fetch position:', error);
       return null;
     }

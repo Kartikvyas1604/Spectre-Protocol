@@ -17,7 +17,7 @@ export function StrategyMarketplace() {
   const { connection } = useConnection();
   const wallet = useWallet();
   const { strategies, loading, error, refreshStrategies } = useStrategies();
-  const { positions } = useUserPositions();
+  const { positions, refreshPositions } = useUserPositions();
   const [subscribing, setSubscribing] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'subscribers' | 'volume' | 'fees'>('subscribers');
@@ -52,6 +52,7 @@ export function StrategyMarketplace() {
       );
       alert('Successfully subscribed to strategy!');
       refreshStrategies();
+      refreshPositions(); // Also refresh positions to update the UI
     } catch (error: any) {
       console.error('Subscription failed:', error);
       
